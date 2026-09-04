@@ -24,12 +24,18 @@ jobs:
         run: |
           set -o pipefail
           cargo fmt --all -- --check 2>&1 | tee log-fmt.txt
-      - name: clippy
+      - name: clippy (workspace)
         run: |
           set -o pipefail
-          cargo clippy --workspace --all-targets --features "cpu serve-http serve-grpc deterministic" -- -D warnings 2>&1 | tee log-clippy.txt
+          cargo clippy --workspace --all-targets -- -D warnings 2>&1 | tee log-clippy.txt
+      - name: clippy (cli features)
+        run: |
+          set -o pipefail
+          cargo clippy -p rhizome-cli --all-targets --features "cpu serve-http serve-grpc deterministic" -- -D warnings 2>&1 | tee -a log-clippy.txt
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   test-ubuntu:
     runs-on: ubuntu-latest
@@ -42,12 +48,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: test
+      - name: test (workspace)
         run: |
           set -o pipefail
-          cargo test --workspace --features "cpu serve-http serve-grpc deterministic" 2>&1 | tee log-test-ubuntu.txt
+          cargo test --workspace 2>&1 | tee log-test-ubuntu.txt
+      - name: test (cli features)
+        run: |
+          set -o pipefail
+          cargo test -p rhizome-cli --features "cpu serve-http serve-grpc deterministic" 2>&1 | tee -a log-test-ubuntu.txt
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   test-macos:
     runs-on: macos-latest
@@ -58,12 +70,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: build + smoke tests
+      - name: build + tests
         run: |
           set -o pipefail
-          cargo test --workspace --features "cpu serve-http deterministic" 2>&1 | tee log-test-macos.txt
+          cargo test --workspace 2>&1 | tee log-test-macos.txt
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   test-windows:
     runs-on: windows-latest
@@ -74,13 +88,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: build + smoke tests
+      - name: build + tests
         shell: bash
         run: |
           set -o pipefail
-          cargo test --workspace --features "cpu serve-http deterministic" 2>&1 | tee log-test-windows.txt
+          cargo test --workspace 2>&1 | tee log-test-windows.txt
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   doc:
     runs-on: ubuntu-latest
@@ -98,7 +114,9 @@ jobs:
           set -o pipefail
           cargo doc --no-deps --workspace 2>&1 | tee log-doc.txt
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   deny:
     runs-on: ubuntu-latest
@@ -125,7 +143,9 @@ jobs:
           set -o pipefail
           cargo run -q --bin xtask -- spec-check 2>&1 | tee log-spec.txt
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   fuzz-smoke:
     runs-on: ubuntu-latest
@@ -141,7 +161,9 @@ jobs:
           set -o pipefail
           cargo run --release -p rhizome-fuzz -- 60 2>&1 | tee log-fuzz.txt
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   cuda-compile:
     runs-on: ubuntu-latest
@@ -154,7 +176,7 @@ jobs:
     steps:
       - name: install git & curl
         run: |
-          apt-get update -y && apt-get install -y --no-install-recommends git ca-certificates curl build-essential pkg-config
+          apt-get update -y && apt-get install -y --no-install-recommends git ca-certificates curl build-essential pkg-config python3
       - uses: actions/checkout@v4
       - name: install rust
         run: |
@@ -166,7 +188,9 @@ jobs:
           cargo build -p rhizome-kernels-cuda --features cuda --release 2>&1 | tee log-cuda.txt
           cargo test -p rhizome-kernels-cuda --features cuda 2>&1 | tee -a log-cuda.txt
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   metal-compile:
     runs-on: macos-latest
@@ -185,7 +209,9 @@ jobs:
           done
           ls /tmp/rhizome-metal-out
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   bench-report:
     runs-on: ubuntu-latest
@@ -207,4 +233,6 @@ jobs:
           path: bench-report.json
           if-no-files-found: ignore
       - uses: ./.github/actions/fail-report
-        if: failure()
+        if: always()
+        with:
+          job-status: ${{ job.status }}

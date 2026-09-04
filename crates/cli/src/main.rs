@@ -13,6 +13,27 @@ use std::path::{Path, PathBuf};
 
 const USAGE: &str = "usage: rhizome <version|params|train|serve|convert|eval|edit-memory|bench|verify|inspect|data|tokenizer> [args]";
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// Set once a stdout write fails (typically EPIPE from `| head`); further
+/// prints become no-ops so the CLI exits quietly with status 0 instead of
+/// panicking inside `println!` (R10).
+static OUT_CLOSED: AtomicBool = AtomicBool::new(false);
+
+fn out(s: &str) {
+    use std::io::Write;
+    if OUT_CLOSED.load(Ordering::Relaxed) {
+        return;
+    }
+    let mut lock = std::io::stdout().lock();
+    let res = lock
+        .write_all(s.as_bytes())
+        .and_then(|()| lock.write_all(b"\n"));
+    if res.is_err() {
+        OUT_CLOSED.store(true, Ordering::Relaxed);
+    }
+}
+
 fn repo_root() -> PathBuf {
     let mut p = std::path::absolute(std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
         .unwrap_or_else(|_| PathBuf::from("."));
@@ -128,29 +149,29 @@ fn cmd_params(args: &[String]) -> i32 {
                 .iter()
                 .map(|(n, c)| (n.clone(), c.model.clone()))
                 .collect();
-            println!("{}", rp::markdown_table(&rows));
+            out(&rp::markdown_table(&rows));
         }
         "json" => {
             let arr = Json::Array(configs.iter().map(|(n, c)| config_json(n, c)).collect());
-            println!("{}", json::to_string_pretty(&arr));
+            out(&json::to_string_pretty(&arr));
         }
         "table" => {
             for (name, cfg) in &configs {
                 let b = rp::breakdown(&cfg.model);
                 let a = rp::active(&cfg.model);
-                println!("{name}:");
-                println!("  total params      : {}", b.total());
-                println!("  active @L=1       : {}", a.total_l1);
-                println!("  per core iter     : {}", a.core_per_iter);
-                println!(
+                out(&format!("{name}:"));
+                out(&format!("  total params      : {}", b.total()));
+                out(&format!("  active @L=1       : {}", a.total_l1));
+                out(&format!("  per core iter     : {}", a.core_per_iter));
+                out(&format!(
                     "  flops/token @L=1  : {}",
                     rp::flops_per_token(&cfg.model, 1, cfg.train.seq_len)
-                );
-                println!(
+                ));
+                out(&format!(
                     "  deploy            : {} ({} bytes)",
                     cfg.model.deploy.name(),
                     rp::deploy_bytes(&cfg.model, &b)
-                );
+                ));
             }
         }
         other => {
@@ -165,7 +186,7 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let code = match args.first().map(String::as_str) {
         Some("version") => {
-            println!("rhizome {}", env!("CARGO_PKG_VERSION"));
+            out(&format!("rhizome {}", env!("CARGO_PKG_VERSION")));
             0
         }
         Some("params") => cmd_params(&args[1..]),

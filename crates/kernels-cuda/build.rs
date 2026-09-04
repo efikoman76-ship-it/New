@@ -35,9 +35,8 @@ fn main() {
                 let ext = if kind == "ptx" { "ptx" } else { "cubin" };
                 let target = out_dir.join(format!("{name}-{arch}.{ext}"));
                 let mut cmd = Command::new(&nvcc);
-                cmd.arg("-O3")
-                    .arg("--use_fast_math=false")
-                    .arg("-std=c++17");
+                // Precise math: no fast-math flags (determinism, R9).
+                cmd.arg("-O3").arg("-std=c++17");
                 if kind == "ptx" {
                     cmd.arg("-ptx");
                 } else {
