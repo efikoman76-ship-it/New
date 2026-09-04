@@ -1,6 +1,6 @@
 //! Tensor storage: typed buffers plus MX-format tensors and conversions.
 //!
-//! Ops in `rhizome-ops` operate on raw slices via [`TensorView`]-style
+//! Ops in `rhizome-ops` operate on raw slices via `TensorView`-style
 //! helpers; this module defines ownership, dtype conversion, and MX
 //! (de)quantization over whole tensors.
 
