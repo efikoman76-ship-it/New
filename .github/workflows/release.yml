@@ -1,0 +1,51 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Release artifacts are Windows-only per the repository owner's instruction
+# (ADR-0010). Tests still run on all platforms in ci.yml.
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: build release binary
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo build --release --bin rhizome --features "cpu serve-http deterministic" 2>&1 | tee log-build.txt
+      - name: run conformance gate (produces report)
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo run --release --bin rhizome -- verify --out conformance-report.json 2>&1 | tee log-verify.txt
+      - name: package artifacts
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp target/release/rhizome.exe dist/
+          cp conformance-report.json dist/ 2>/dev/null || true
+          # ed25519 signature over the artifact set (key from repo variable;
+          # when unset, an unsigned marker is embedded and verify flags it).
+          cargo run --release --bin rhizome -- inspect --sign-manifest dist 2>&1 | tee log-sign.txt || true
+          cd dist && tar -czf ../rhizome-windows-x86_64.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rhizome-windows-x86_64
+          path: rhizome-windows-x86_64.tar.gz
+      - name: attach to release (tag builds)
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release create "${GITHUB_REF#refs/tags/}" --verify-tag rhizome-windows-x86_64.tar.gz || \
+            gh release upload "${GITHUB_REF#refs/tags/}" rhizome-windows-x86_64.tar.gz --clobber

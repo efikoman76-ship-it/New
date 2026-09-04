@@ -1,0 +1,30 @@
+name: gpu
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: suite to run
+        default: conformance
+        type: choice
+        options: [conformance, roofline, all]
+  schedule:
+    - cron: "23 4 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  gpu:
+    runs-on: [self-hosted, gpu]
+    if: vars.HAS_GPU_RUNNER == 'true'
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: T10 conformance + roofline
+        run: |
+          set -o pipefail
+          cargo test --release -p rhizome-conformance --features "cuda deterministic" 2>&1 | tee log-gpu.txt
+          cargo run --release -p rhizome-benches -- --roofline 2>&1 | tee -a log-gpu.txt
+      - name: record skip when no hardware path executed
+        if: failure()
+        run: echo "gpu suite failed; logs attached" | tee log-skip.txt

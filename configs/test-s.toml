@@ -1,0 +1,84 @@
+# Test-S: smallest CI configuration (T1–T6 run against this).
+# Architecture invariants (SPEC 3.10): stratum = 5 Local + 1 Global.
+
+[model]
+name_tier = "test-s"
+d_model = 64
+n_heads = 2
+d_head = 32
+trunk_strata = 1
+core_after_stratum = 1
+l_max = 3
+core_read_source = "input"
+
+experts_routed = 4
+experts_shared = 1
+expert_topk = 2
+expert_hidden = 128
+expert_groups = 2
+pkm_blocks = []
+
+d_latent = 48
+d_rope = 16
+d_nope = 16
+rope_base = 10000.0
+fp8_latent_cache = false
+
+vocab_size = 1024
+tie_unembed = false
+mtp_heads = 2
+dense_ffn_mult = 4
+conv_kernel = 4
+deploy = "f32"
+
+[train]
+seed = 0
+micro_batch = 8
+batch = 32
+seq_len = 128
+steps = 200
+warmup_frac = 0.1
+stable_frac = 0.5
+muon_lr = 0.02
+muon_momentum = 0.95
+muon_ns_iters = 5
+adamw_lr = 0.003
+adam_beta1 = 0.9
+adam_beta2 = 0.95
+adam_eps = 1e-8
+weight_decay = 0.01
+ema_decay = 0.999
+grad_clip = 1.0
+z_loss = 1e-4
+balance_loss = 1e-4
+depth_reg = 1e-3
+halt_tau = 0.5
+depth_mu = 0.6931471805599453
+depth_sigma = 0.5
+backprop_depth = 4
+conv_epsilon = 0.05
+loss_epsilon = 0.02
+loss_subsample = 0.125
+scheduled_halting_start = 0.8
+qat_start = 0.9
+router_bias_gamma = 1e-3
+ep_world = 1
+pipeline_stages = 1
+zero_stage = 0
+ckpt_interval = 50
+deterministic = true
+
+[serve]
+http_port = 18080
+grpc_port = 18081
+page_size = 64
+prefill_chunk = 512
+max_context = 2048
+buckets = [1, 2, 4, 8]
+prefix_cache_bytes = 67108864
+snapshot_every = 512
+deterministic = true
+spec_draft = 2
+itl_slo_us = 50000
+max_pages = 1024
+default_think_budget = 3

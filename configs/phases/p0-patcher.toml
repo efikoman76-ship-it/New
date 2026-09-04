@@ -1,0 +1,11 @@
+# P0: patcher byte LM (byte-path tiers). Applied as an overlay on a tier.
+[phase]
+name = "p0-patcher"
+target = "patcher"
+seq_len = 1024
+steps_scale = 0.02
+
+[train]
+seq_len = 1024
+z_loss = 1e-4
+scheduled_halting_start = 1.1   # disabled (never reached)

@@ -1,0 +1,16 @@
+[package]
+name = "rhizome-quant"
+description = "Calibration, MX/FP8 conversion, conformance reports."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rhizome-core = { workspace = true }
+rhizome-ops = { workspace = true }
+rhizome-runtime = { workspace = true }
+
+[lints]
+workspace = true

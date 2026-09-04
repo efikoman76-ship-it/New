@@ -1,0 +1,22 @@
+[package]
+name = "rhizome-benches"
+description = "Micro-benchmark suite with committed baselines (ADR-0004)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+rhizome-core = { workspace = true }
+rhizome-ops = { workspace = true }
+rhizome-kernels-cpu = { workspace = true }
+rhizome-runtime = { workspace = true }
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "rhizome-bench"
+path = "src/main.rs"

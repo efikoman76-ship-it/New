@@ -1,0 +1,76 @@
+# Test-L: d=256, 2 strata, 8 experts, byte path ON (nightly).
+# d_local/ngram_buckets are scaled down from production tiers so nightly CPU
+# runs stay inside budget; the architecture is unchanged (ADR-0007).
+
+[model]
+name_tier = "test-l"
+d_model = 256
+n_heads = 8
+d_head = 32
+trunk_strata = 2
+core_after_stratum = 1
+l_max = 4
+core_read_source = "input"
+
+experts_routed = 8
+experts_shared = 1
+expert_topk = 2
+expert_hidden = 256
+expert_groups = 4
+pkm_blocks = [11]
+pkm_slots = 8192
+pkm_rows = 64
+pkm_dims = 32
+pkm_query_dim = 64
+pkm_topk = 8
+
+d_latent = 96
+d_rope = 16
+d_nope = 32
+rope_base = 10000.0
+fp8_latent_cache = false
+
+vocab_size = 4096
+tie_unembed = false
+mtp_heads = 2
+dense_ffn_mult = 4
+conv_kernel = 4
+deploy = "f32"
+
+[model.byte_path]
+enabled = true
+d_local = 128
+encoder_blocks = 4
+decoder_blocks = 6
+ngram_tables = 3
+ngram_min = 3
+ngram_max = 8
+ngram_buckets = 4096
+byte_window = 64
+patch_min = 1
+patch_max = 16
+theta_g = 3.0
+delta = 0.8
+patcher_d_model = 128
+patcher_blocks = 2
+
+[train]
+seed = 0
+micro_batch = 8
+batch = 32
+seq_len = 256
+steps = 400
+warmup_frac = 0.1
+stable_frac = 0.5
+muon_lr = 0.02
+adamw_lr = 0.003
+deterministic = true
+
+[serve]
+http_port = 18080
+page_size = 64
+prefill_chunk = 1024
+max_context = 4096
+buckets = [1, 2, 4, 8]
+deterministic = true
+default_think_budget = 4

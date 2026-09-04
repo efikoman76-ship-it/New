@@ -1,0 +1,14 @@
+[package]
+name = "rhizome-kernels-cubecl"
+description = "Portable long-tail ops backend (dependency-free implementation of the CubeCL-portable role; ADR-0002)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rhizome-core = { workspace = true }
+
+[lints]
+workspace = true

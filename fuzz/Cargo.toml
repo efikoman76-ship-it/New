@@ -1,0 +1,23 @@
+[package]
+name = "rhizome-fuzz"
+description = "Structured random-input fuzz harnesses (cargo-fuzz-compatible entry points; ADR-0003)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+rhizome-core = { workspace = true }
+rhizome-data = { workspace = true }
+rhizome-tokenizer = { workspace = true }
+rhizome-serve = { workspace = true }
+rhizome-plan = { workspace = true }
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "fuzz-all"
+path = "src/main.rs"

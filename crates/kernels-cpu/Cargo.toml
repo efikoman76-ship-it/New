@@ -1,0 +1,18 @@
+[package]
+name = "rhizome-kernels-cpu"
+description = "CPU backend: SIMD kernels (AVX2/AVX-512/NEON), scalar fallbacks, thread pool, MX dequant."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+
+[dependencies]
+rhizome-core = { workspace = true }
+rhizome-ops = { workspace = true }
+
+[lints]
+workspace = true

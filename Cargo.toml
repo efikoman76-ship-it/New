@@ -1,0 +1,87 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/ops",
+    "crates/plan",
+    "crates/runtime",
+    "crates/kernels-cpu",
+    "crates/kernels-cuda",
+    "crates/kernels-metal",
+    "crates/kernels-cubecl",
+    "crates/collective",
+    "crates/tokenizer",
+    "crates/data",
+    "crates/train",
+    "crates/serve",
+    "crates/quant",
+    "crates/eval",
+    "crates/conformance",
+    "crates/cli",
+    "xtask",
+    "fuzz",
+    "benches",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.97.0"
+license = "Apache-2.0"
+repository = "https://github.com/efikoman76-ship-it/New"
+
+[workspace.lints.rust]
+# R2: hard bans everywhere. Per-crate test relaxations are explicit and documented.
+missing_abi = "deny"
+unused_must_use = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+# R2: hard bans everywhere, tests included.
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+undocumented_unsafe_blocks = "deny"
+exit = "deny"
+
+[workspace.dependencies]
+rhizome-core = { path = "crates/core", version = "0.1.0" }
+rhizome-ops = { path = "crates/ops", version = "0.1.0" }
+rhizome-plan = { path = "crates/plan", version = "0.1.0" }
+rhizome-runtime = { path = "crates/runtime", version = "0.1.0" }
+rhizome-kernels-cpu = { path = "crates/kernels-cpu", version = "0.1.0" }
+rhizome-kernels-cuda = { path = "crates/kernels-cuda", version = "0.1.0" }
+rhizome-kernels-metal = { path = "crates/kernels-metal", version = "0.1.0" }
+rhizome-kernels-cubecl = { path = "crates/kernels-cubecl", version = "0.1.0" }
+rhizome-collective = { path = "crates/collective", version = "0.1.0" }
+rhizome-tokenizer = { path = "crates/tokenizer", version = "0.1.0" }
+rhizome-data = { path = "crates/data", version = "0.1.0" }
+rhizome-train = { path = "crates/train", version = "0.1.0" }
+rhizome-serve = { path = "crates/serve", version = "0.1.0" }
+rhizome-quant = { path = "crates/quant", version = "0.1.0" }
+rhizome-eval = { path = "crates/eval", version = "0.1.0" }
+rhizome-conformance = { path = "crates/conformance", version = "0.1.0" }
+
+# Feature contract (see SPEC.md Section 2): cpu (default), cuda, metal, cubecl,
+# nccl, rdma, serve-http (default), serve-grpc, deterministic, xcheck. The
+# features are declared on the crates that implement them; `cargo xtask ci`
+# mirrors the CI feature matrix.
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = false
+panic = "unwind"
+
+[profile.test]
+# Convergence and parity tests execute real GEMMs; debug builds are too slow.
+opt-level = 2
+debug = 0
+
+[profile.bench]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = false

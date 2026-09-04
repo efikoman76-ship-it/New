@@ -1,0 +1,47 @@
+name: fail-report
+description: Post captured step logs to the PR/commit when a job fails (ADR-0012)
+inputs: {}
+runs:
+  using: composite
+  steps:
+    - name: Upload captured logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-logs-${{ github.job }}-${{ github.run_id }}
+        path: log-*.txt
+        if-no-files-found: ignore
+        retention-days: 14
+    - name: Post failure comment via API
+      if: failure()
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        PR: ${{ github.event.number }}
+        RUN_ID: ${{ github.run_id }}
+        JOB: ${{ github.job }}
+      run: |
+        {
+          echo "### ❌ CI job \`$JOB\` failed (run $RUN_ID)"
+          echo ""
+          echo "commit: \`${SHA:0:10}\`"
+          for f in log-*.txt; do
+            [ -f "$f" ] || continue
+            echo ""
+            echo "<details><summary><code>$f</code> (last 300 lines)</summary>"
+            echo ""
+            echo '```'
+            tail -n 300 "$f" | sed -e 's/```/\`\`\`/g'
+            echo '```'
+            echo "</details>"
+          done
+        } > body.md
+        # Truncate to stay well inside API limits (~55k chars usable).
+        head -c 55000 body.md > body-final.md
+        if [ -n "$PR" ]; then
+          gh api "repos/$REPO/issues/$PR/comments" -F body=@body-final.md && echo "posted PR comment"
+        else
+          gh api "repos/$REPO/commits/$SHA/comments" -F body=@body-final.md && echo "posted commit comment"
+        fi

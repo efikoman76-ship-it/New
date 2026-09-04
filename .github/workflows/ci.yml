@@ -1,0 +1,210 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main, "arena/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fmt-clippy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: rustfmt
+        run: |
+          set -o pipefail
+          cargo fmt --all -- --check 2>&1 | tee log-fmt.txt
+      - name: clippy
+        run: |
+          set -o pipefail
+          cargo clippy --workspace --all-targets --features "cpu serve-http serve-grpc deterministic" -- -D warnings 2>&1 | tee log-clippy.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  test-ubuntu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      RUSTFLAGS: "-C target-cpu=native"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: test
+        run: |
+          set -o pipefail
+          cargo test --workspace --features "cpu serve-http serve-grpc deterministic" 2>&1 | tee log-test-ubuntu.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  test-macos:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: build + smoke tests
+        run: |
+          set -o pipefail
+          cargo test --workspace --features "cpu serve-http deterministic" 2>&1 | tee log-test-macos.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  test-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: build + smoke tests
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test --workspace --features "cpu serve-http deterministic" 2>&1 | tee log-test-windows.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  doc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      RUSTDOCFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: rustdoc
+        run: |
+          set -o pipefail
+          cargo doc --no-deps --workspace 2>&1 | tee log-doc.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  deny:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          arguments: --workspace
+
+  spec-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: spec-check
+        run: |
+          set -o pipefail
+          cargo run -q --bin xtask -- spec-check 2>&1 | tee log-spec.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  fuzz-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: fuzz 60s per target (stable harness, ADR-0003)
+        run: |
+          set -o pipefail
+          cargo run --release -p rhizome-fuzz -- 60 2>&1 | tee log-fuzz.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  cuda-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    container:
+      image: nvidia/cuda:12.6.1-devel-ubuntu22.04
+    steps:
+      - name: install git & curl
+        run: |
+          apt-get update -y && apt-get install -y --no-install-recommends git ca-certificates curl build-essential pkg-config
+      - uses: actions/checkout@v4
+      - name: install rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.97.0
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: compile cuda kernels (nvcc -> ptx/cubin sm_80 sm_90)
+        run: |
+          set -o pipefail
+          cargo build -p rhizome-kernels-cuda --features cuda --release 2>&1 | tee log-cuda.txt
+          cargo test -p rhizome-kernels-cuda --features cuda 2>&1 | tee -a log-cuda.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  metal-compile:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: compile-check MSL kernels
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/rhizome-metal-out
+          for f in crates/kernels-metal/src/kernels/*.metal; do
+            xcrun -sdk macosx metal -c "$f" -o "/tmp/rhizome-metal-out/$(basename "$f" .metal).air" 2>&1 | tee log-metal.txt
+          done
+          ls /tmp/rhizome-metal-out
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  bench-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: run benchmarks (informational)
+        run: |
+          set -o pipefail
+          cargo run --release -p rhizome-benches -- --json 2>&1 | tee log-bench.txt
+      - name: upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-report-${{ github.run_id }}
+          path: bench-report.json
+          if-no-files-found: ignore
+      - uses: ./.github/actions/fail-report
+        if: failure()
