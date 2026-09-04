@@ -28,9 +28,7 @@ jobs:
           set -o pipefail
           cargo test --release -p rhizome-train --features "cpu deterministic" -- --nocapture convergence_long 2>&1 | tee log-convergence.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   fuzz-long:
     runs-on: ubuntu-latest
@@ -46,9 +44,7 @@ jobs:
           set -o pipefail
           cargo run --release -p rhizome-fuzz -- 300 2>&1 | tee log-fuzz.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   miri:
     runs-on: ubuntu-latest
@@ -68,9 +64,7 @@ jobs:
           set -o pipefail
           cargo miri test -p rhizome-core -p rhizome-tokenizer -p rhizome-data -p rhizome-plan 2>&1 | tee log-miri.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   docs:
     runs-on: ubuntu-latest

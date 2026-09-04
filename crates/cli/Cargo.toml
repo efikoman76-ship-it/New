@@ -8,6 +8,14 @@ license.workspace = true
 repository.workspace = true
 default-run = "rhizome"
 
+[features]
+# Feature stubs; become load-bearing with M7+ (backend + server selection).
+default = ["cpu"]
+cpu = []
+serve-http = []
+serve-grpc = []
+deterministic = []
+
 [dependencies]
 rhizome-core = { workspace = true }
 rhizome-ops = { workspace = true }

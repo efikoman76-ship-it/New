@@ -1,14 +1,13 @@
 name: fail-report
-description: Post captured step logs to the PR/commit when a job fails (ADR-0012)
-inputs:
-  job-status:
-    description: Job status from the caller (${{ job.status }})
-    required: true
+description: Post captured step logs to the PR/commit (call with if: failure(); ADR-0012)
+inputs: {}
 runs:
   using: composite
   steps:
+    # NOTE: sub-steps must not carry `if: failure()` — inside a composite
+    # action that predicate does not see the caller's job status. The
+    # caller gates this whole action with `if: failure()`.
     - name: Upload captured logs
-      if: always() && inputs.job-status == 'failure'
       uses: actions/upload-artifact@v4
       with:
         name: ci-logs-${{ github.job }}-${{ github.run_id }}
@@ -16,7 +15,6 @@ runs:
         if-no-files-found: ignore
         retention-days: 14
     - name: Post failure comment via API
-      if: always() && inputs.job-status == 'failure'
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
@@ -46,7 +44,8 @@ runs:
           done
         } > body.md
         head -c 55000 body.md > body-final.md
-        python3 - <<'PY'
+        PYBIN=$(command -v python3 || command -v python)
+        "$PYBIN" - <<'PY'
         import json
         body = open("body-final.md", encoding="utf-8", errors="replace").read()
         with open("payload.json", "w", encoding="utf-8") as f:

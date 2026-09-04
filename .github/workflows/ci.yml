@@ -33,9 +33,7 @@ jobs:
           set -o pipefail
           cargo clippy -p rhizome-cli --all-targets --features "cpu serve-http serve-grpc deterministic" -- -D warnings 2>&1 | tee -a log-clippy.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   test-ubuntu:
     runs-on: ubuntu-latest
@@ -57,9 +55,7 @@ jobs:
           set -o pipefail
           cargo test -p rhizome-cli --features "cpu serve-http serve-grpc deterministic" 2>&1 | tee -a log-test-ubuntu.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   test-macos:
     runs-on: macos-latest
@@ -75,9 +71,7 @@ jobs:
           set -o pipefail
           cargo test --workspace 2>&1 | tee log-test-macos.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   test-windows:
     runs-on: windows-latest
@@ -94,9 +88,7 @@ jobs:
           set -o pipefail
           cargo test --workspace 2>&1 | tee log-test-windows.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   doc:
     runs-on: ubuntu-latest
@@ -114,9 +106,7 @@ jobs:
           set -o pipefail
           cargo doc --no-deps --workspace 2>&1 | tee log-doc.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   deny:
     runs-on: ubuntu-latest
@@ -143,9 +133,7 @@ jobs:
           set -o pipefail
           cargo run -q --bin xtask -- spec-check 2>&1 | tee log-spec.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   fuzz-smoke:
     runs-on: ubuntu-latest
@@ -161,9 +149,7 @@ jobs:
           set -o pipefail
           cargo run --release -p rhizome-fuzz -- 60 2>&1 | tee log-fuzz.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   cuda-compile:
     runs-on: ubuntu-latest
@@ -188,9 +174,7 @@ jobs:
           cargo build -p rhizome-kernels-cuda --features cuda --release 2>&1 | tee log-cuda.txt
           cargo test -p rhizome-kernels-cuda --features cuda 2>&1 | tee -a log-cuda.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   metal-compile:
     runs-on: macos-latest
@@ -209,9 +193,7 @@ jobs:
           done
           ls /tmp/rhizome-metal-out
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
 
   bench-report:
     runs-on: ubuntu-latest
@@ -233,6 +215,4 @@ jobs:
           path: bench-report.json
           if-no-files-found: ignore
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()

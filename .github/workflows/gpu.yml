@@ -29,6 +29,4 @@ jobs:
         if: failure()
         run: echo "gpu suite failed; logs attached" | tee log-skip.txt
       - uses: ./.github/actions/fail-report
-        if: always()
-        with:
-          job-status: ${{ job.status }}
+        if: failure()
