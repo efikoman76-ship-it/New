@@ -1,0 +1,7 @@
+# P1: pretraining at 4K context.
+[phase]
+name = "p1-pretrain"
+target = "trunk"
+
+[train]
+seq_len = 4096

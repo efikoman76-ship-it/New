@@ -1,0 +1,8 @@
+# P3: QAT inside the final 10% of the WSD decay.
+[phase]
+name = "p3-qat"
+target = "trunk"
+
+[train]
+qat_start = 0.9
+stable_frac = 0.7

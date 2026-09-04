@@ -1,0 +1,39 @@
+[package]
+name = "rhizome-cli"
+description = "`rhizome` binary: train | serve | convert | eval | params | edit-memory | bench | verify | inspect | data | tokenizer."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+default-run = "rhizome"
+
+[features]
+# Feature stubs; become load-bearing with M7+ (backend + server selection).
+default = ["cpu"]
+cpu = []
+serve-http = []
+serve-grpc = []
+deterministic = []
+
+[dependencies]
+rhizome-core = { workspace = true }
+rhizome-ops = { workspace = true }
+rhizome-plan = { workspace = true }
+rhizome-runtime = { workspace = true }
+rhizome-kernels-cpu = { workspace = true }
+rhizome-collective = { workspace = true }
+rhizome-tokenizer = { workspace = true }
+rhizome-data = { workspace = true }
+rhizome-train = { workspace = true }
+rhizome-serve = { workspace = true }
+rhizome-quant = { workspace = true }
+rhizome-eval = { workspace = true }
+rhizome-conformance = { workspace = true }
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "rhizome"
+path = "src/main.rs"

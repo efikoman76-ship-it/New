@@ -1,0 +1,20 @@
+[package]
+name = "rhizome-train"
+description = "Muon/AdamW/sparse-AdamW optimizers, WSD schedule, μP, EMA, ZeRO-3, expert/pipeline/sequence parallelism, checkpoints, halting scheduler."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rhizome-core = { workspace = true }
+rhizome-ops = { workspace = true }
+rhizome-plan = { workspace = true }
+rhizome-runtime = { workspace = true }
+rhizome-data = { workspace = true }
+rhizome-collective = { workspace = true }
+rhizome-tokenizer = { workspace = true }
+
+[lints]
+workspace = true

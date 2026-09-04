@@ -1,0 +1,15 @@
+[package]
+name = "xtask"
+description = "Repo automation: cargo xtask ci|test|bench|spec-check"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+rhizome-core = { workspace = true }
+
+[lints]
+workspace = true

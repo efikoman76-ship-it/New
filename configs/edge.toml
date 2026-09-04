@@ -1,0 +1,55 @@
+# Edge: ~2.5B total / ~0.45B active at L=1. CPU/mobile target.
+
+[model]
+name_tier = "edge"
+d_model = 1024
+n_heads = 8
+d_head = 128
+trunk_strata = 3
+core_after_stratum = 1
+l_max = 4
+core_read_source = "input"
+
+experts_routed = 32
+experts_shared = 1
+expert_topk = 4
+expert_hidden = 1024
+expert_groups = 4
+pkm_blocks = []
+
+d_latent = 512
+d_rope = 64
+d_nope = 128
+rope_base = 1000000.0
+fp8_latent_cache = false
+
+vocab_size = 131072
+tie_unembed = false
+mtp_heads = 2
+dense_ffn_mult = 4
+conv_kernel = 4
+deploy = "mxint4"
+
+[train]
+seed = 0
+micro_batch = 8
+batch = 256
+seq_len = 4096
+steps = 100000
+warmup_frac = 0.02
+stable_frac = 0.7
+muon_lr = 0.02
+adamw_lr = 0.0006
+ep_world = 1
+deterministic = true
+
+[serve]
+http_port = 8080
+grpc_port = 8081
+page_size = 64
+prefill_chunk = 2048
+max_context = 32768
+buckets = [1, 2, 4, 8, 16, 32, 64, 128]
+deterministic = true
+spec_draft = 3
+default_think_budget = 4

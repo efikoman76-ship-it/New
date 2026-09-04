@@ -1,0 +1,11 @@
+# P2: context extension 32K -> 256K with YaRN.
+[phase]
+name = "p2-context"
+target = "trunk"
+
+[phase.yarn]
+original_context = 4096
+target_context = 262144
+
+[train]
+seq_len = 32768

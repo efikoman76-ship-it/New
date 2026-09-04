@@ -1,0 +1,74 @@
+# Flagship: ~70B total / ~9.5B active at L=1. 8×H100 node target.
+
+[model]
+name_tier = "flagship"
+d_model = 4096
+n_heads = 32
+d_head = 128
+trunk_strata = 7
+core_after_stratum = 3
+l_max = 8
+core_read_source = "input"
+
+experts_routed = 64
+experts_shared = 2
+expert_topk = 6
+expert_hidden = 1536
+expert_groups = 8
+pkm_blocks = [12, 24, 36]
+
+d_latent = 512
+d_rope = 64
+d_nope = 128
+rope_base = 1000000.0
+fp8_latent_cache = true
+
+vocab_size = 131072
+tie_unembed = false
+mtp_heads = 2
+dense_ffn_mult = 4
+conv_kernel = 4
+deploy = "mxfp4+fp8attn"
+
+[model.byte_path]
+enabled = true
+d_local = 1024
+encoder_blocks = 4
+decoder_blocks = 6
+ngram_tables = 3
+ngram_min = 3
+ngram_max = 8
+ngram_buckets = 262144
+byte_window = 256
+patch_min = 1
+patch_max = 64
+theta_g = 3.0
+delta = 0.8
+patcher_d_model = 1024
+patcher_blocks = 6
+
+[train]
+seed = 0
+micro_batch = 2
+batch = 1024
+seq_len = 4096
+steps = 500000
+warmup_frac = 0.01
+stable_frac = 0.7
+muon_lr = 0.02
+adamw_lr = 0.0003
+ep_world = 8
+pipeline_stages = 4
+zero_stage = 3
+deterministic = true
+
+[serve]
+http_port = 8080
+grpc_port = 8081
+page_size = 64
+prefill_chunk = 2048
+max_context = 262144
+buckets = [1, 2, 4, 8, 16, 32, 64, 128]
+deterministic = true
+spec_draft = 3
+default_think_budget = 8

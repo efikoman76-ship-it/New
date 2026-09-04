@@ -1,0 +1,19 @@
+[package]
+name = "rhizome-kernels-cuda"
+description = "CUDA backend: cudarc FFI, PTX/cubin build, CUDA graphs (feature `cuda`)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+cuda = []
+
+[build-dependencies]
+
+[dependencies]
+rhizome-core = { workspace = true }
+
+[lints]
+workspace = true

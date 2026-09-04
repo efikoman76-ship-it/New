@@ -1,0 +1,81 @@
+name: fail-report
+description: Post captured step logs to the PR/commit when the calling job failed (ADR-0012)
+inputs:
+  diagnostics:
+    description: extra "name=path" probes echoed into the comment when tools are missing
+    default: ""
+    required: false
+runs:
+  using: composite
+  steps:
+    # NOTE: sub-steps must not carry `if: failure()` — inside a composite
+    # action that predicate does not see the caller's job status. The
+    # caller gates this whole action with `if: failure()`.
+    - name: Upload captured logs
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-logs-${{ github.job }}-${{ github.run_id }}
+        path: log-*.txt
+        if-no-files-found: ignore
+        retention-days: 14
+    - name: Post failure comment via API
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        PR: ${{ github.event.number }}
+        RUN_ID: ${{ github.run_id }}
+        JOB: ${{ github.job }}
+        DIAG: ${{ inputs.diagnostics }}
+      run: |
+        set -u
+        {
+          echo "### ❌ CI job \`$JOB\` failed (run $RUN_ID)"
+          echo ""
+          echo "commit: \`${SHA:0:10}\`"
+          # Tool availability diagnostics (container jobs have surprised us).
+          echo ""
+          echo "tools: curl=$(command -v curl || echo MISSING) gh=$(command -v gh || echo MISSING) python=$(command -v python3 || command -v python || echo MISSING)${DIAG:+ $DIAG}"
+          if ! ls log-*.txt >/dev/null 2>&1; then
+            echo ""
+            echo "no captured logs (failure before tee ran)"
+          fi
+          for f in log-*.txt; do
+            [ -f "$f" ] || continue
+            echo ""
+            echo "<details><summary><code>$f</code> (last 300 lines)</summary>"
+            echo ""
+            echo '```'
+            tail -n 300 "$f" | sed -e 's/```/\`\`\`/g'
+            echo '```'
+            echo "</details>"
+          done
+        } > body.md
+        head -c 55000 body.md > body-final.md
+        # Build the JSON payload without python/jq (not guaranteed in
+        # containers): escape via sed is unsafe for arbitrary bytes, so try
+        # python first and fall back to a printf-based minimal escaper.
+        PYBIN=""
+        command -v python3 >/dev/null 2>&1 && PYBIN=python3
+        [ -z "$PYBIN" ] && command -v python >/dev/null 2>&1 && PYBIN=python
+        if [ -n "$PYBIN" ]; then
+          "$PYBIN" -c 'import json,sys; open("payload.json","w").write(json.dumps({"body": open(sys.argv[1], encoding="utf-8", errors="replace").read()}))' body-final.md
+        else
+          printf '{"body":"' > payload.json
+          sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e "$(printf 's/\t/\\t/g')" body-final.md | while IFS= read -r line; do
+            printf '%s\\n' "$line"
+          done >> payload.json
+          printf '"}' >> payload.json
+        fi
+        if [ -n "$PR" ]; then
+          URL="https://api.github.com/repos/$REPO/issues/$PR/comments"
+        else
+          URL="https://api.github.com/repos/$REPO/commits/$SHA/comments"
+        fi
+        curl -sS -f -X POST \
+          -H "Authorization: Bearer $GH_TOKEN" \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          --data-binary @payload.json \
+          "$URL" && echo "posted failure comment"

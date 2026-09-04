@@ -1,0 +1,52 @@
+# Test-M: d=128, 2 strata, 8 experts (nightly convergence).
+
+[model]
+name_tier = "test-m"
+d_model = 128
+n_heads = 4
+d_head = 32
+trunk_strata = 2
+core_after_stratum = 1
+l_max = 4
+core_read_source = "input"
+
+experts_routed = 8
+experts_shared = 1
+expert_topk = 2
+expert_hidden = 192
+expert_groups = 2
+pkm_blocks = []
+
+d_latent = 64
+d_rope = 16
+d_nope = 32
+rope_base = 10000.0
+fp8_latent_cache = false
+
+vocab_size = 2048
+tie_unembed = false
+mtp_heads = 2
+dense_ffn_mult = 4
+conv_kernel = 4
+deploy = "f32"
+
+[train]
+seed = 0
+micro_batch = 8
+batch = 32
+seq_len = 256
+steps = 400
+warmup_frac = 0.1
+stable_frac = 0.5
+muon_lr = 0.02
+adamw_lr = 0.003
+deterministic = true
+
+[serve]
+http_port = 18080
+page_size = 64
+prefill_chunk = 1024
+max_context = 4096
+buckets = [1, 2, 4, 8]
+deterministic = true
+default_think_budget = 4

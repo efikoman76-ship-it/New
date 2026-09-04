@@ -1,0 +1,80 @@
+name: nightly
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+jobs:
+  long-convergence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      RUSTFLAGS: "-C target-cpu=native"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: Test-L convergence + extra seeds
+        run: |
+          set -o pipefail
+          cargo test --release -p rhizome-train --features "cpu deterministic" -- --nocapture convergence_long 2>&1 | tee log-convergence.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  fuzz-long:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: fuzz 30 min total (ADR-0003)
+        run: |
+          set -o pipefail
+          cargo run --release -p rhizome-fuzz -- 300 2>&1 | tee log-fuzz.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  miri:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: install nightly + miri
+        run: |
+          rustup toolchain install nightly --profile minimal --component miri
+          rustup override set nightly
+          cargo miri setup
+      - name: miri on safe crates
+        run: |
+          set -o pipefail
+          cargo miri test -p rhizome-core -p rhizome-tokenizer -p rhizome-data -p rhizome-plan 2>&1 | tee log-miri.txt
+      - uses: ./.github/actions/fail-report
+        if: failure()
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: docs consistency
+        run: |
+          set -o pipefail
+          cargo run -q --bin xtask -- spec-check 2>&1 | tee log-spec.txt

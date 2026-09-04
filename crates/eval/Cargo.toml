@@ -1,0 +1,15 @@
+[package]
+name = "rhizome-eval"
+description = "Evaluation harness: perplexity, synthetic tasks, needle, calibration, memory-edit locality."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rhizome-core = { workspace = true }
+rhizome-data = { workspace = true }
+
+[lints]
+workspace = true

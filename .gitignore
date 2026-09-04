@@ -1,0 +1,12 @@
+# Build artifacts
+/target
+**/*.rs.bk
+
+# Python (tools/xcheck is CI-only)
+__pycache__/
+.venv/
+
+# Local scratch outputs
+runs/
+artifacts/
+*.log

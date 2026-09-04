@@ -1,0 +1,17 @@
+[package]
+name = "rhizome-runtime"
+description = "Device abstraction, arena/slab allocators, plan executor, deterministic-mode switches."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rhizome-core = { workspace = true }
+rhizome-ops = { workspace = true }
+rhizome-plan = { workspace = true }
+rhizome-kernels-cpu = { workspace = true }
+
+[lints]
+workspace = true

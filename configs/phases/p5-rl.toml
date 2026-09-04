@@ -1,0 +1,15 @@
+# P5: GRPO-style RL with verifiable rewards.
+[phase]
+name = "p5-rl"
+target = "trunk"
+
+[phase.rl]
+algorithm = "grpo"
+group_size = 8
+kl_ref = "frozen"
+reward_lambda_think_steps = 0.01
+verifiable = ["math-exact-match", "code-unit-tests", "json-schema"]
+rollout_deterministic = true
+
+[train]
+scheduled_halting_start = 0.0

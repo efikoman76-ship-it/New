@@ -1,0 +1,8 @@
+# P4: SFT with budget-conditioning labels.
+[phase]
+name = "p4-sft"
+target = "trunk"
+
+[train]
+scheduled_halting_start = 0.0   # always on
+depth_mu = 2.303                 # budget conditioning skews deeper
