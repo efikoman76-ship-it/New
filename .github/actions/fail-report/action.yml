@@ -1,5 +1,5 @@
 name: fail-report
-description: Post captured step logs to the PR/commit (call with if: failure(); ADR-0012)
+description: Post captured step logs to the PR/commit when the calling job failed (ADR-0012)
 inputs: {}
 runs:
   using: composite
